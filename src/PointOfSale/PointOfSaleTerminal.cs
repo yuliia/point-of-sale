@@ -68,6 +68,15 @@ namespace PointOfSale
             _pricesStorage.SetPrice(code, quantity, price);
         }
 
+        /// <summary>
+        /// Resets state to default
+        /// </summary>
+        public void CloseCheck()
+        {
+            _check.Clear();
+            _pricesCache.Clear();
+        }
+
         public decimal GetTotal()
         {
             var total = 0m;

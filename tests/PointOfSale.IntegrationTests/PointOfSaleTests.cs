@@ -98,6 +98,26 @@ namespace PointOfSale.IntegrationTests
             Assert.Equal(8.5m, total);
         }
 
+        [Fact]
+        public void Can_Reset_When_Close_Check()
+        {
+            var pos = GetSetUpInstance();
+            var newPrice = 2;
+            
+            pos.Scan("A");
+            pos.SetPrice("A", 1, newPrice);
+            var total = pos.GetTotal();
+            Assert.Equal(1.25m, total);
+            
+            pos.CloseCheck();
+            total = pos.GetTotal();
+            Assert.Equal(0, total);
+            
+            pos.Scan("A");
+            total = pos.GetTotal();
+            Assert.Equal(newPrice, total);
+        }
+
         private PointOfSaleTerminal GetSetUpInstance()
         {
             var pos = new PointOfSaleTerminal();
