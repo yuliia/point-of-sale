@@ -36,7 +36,6 @@ namespace PointOfSale
             if (volumePrice != null)
             {
                 prices.Remove(volumePrice);
-                return;
             }
             
             prices.Add(new PriceInfo(code, quantity, price));
