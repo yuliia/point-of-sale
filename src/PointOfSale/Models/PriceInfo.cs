@@ -4,7 +4,7 @@ namespace PointOfSale.Models
 {
     public class PriceInfo
     {
-        public PriceInfo(string code, int quantity, decimal price)
+        public PriceInfo(string code, int quantity, decimal price, PriceType type = PriceType.Price, PriceUnit unit = PriceUnit.Money)
         {
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -31,6 +31,10 @@ namespace PointOfSale.Models
         public int Quantity { get; }
         
         public decimal Price { get; }
+
+        public PriceType Type { get; set; }
+
+        public PriceUnit PriceUnit { get; set; }
         
         protected bool Equals(PriceInfo other)
         {
@@ -55,5 +59,25 @@ namespace PointOfSale.Models
                 return hashCode;
             }
         }
+    }
+
+    public enum PriceUnit
+    {
+        Money = 0,
+        Percents
+    }
+
+    public enum PriceType
+    {
+        Price = 0,
+        VolumeDiscount = 1,
+        CardDiscount = 2
+    }
+
+    public class CumulativeDiscount
+    {
+        public string Code { get; set; }
+
+        public decimal AmountAccumulated { get; set; }
     }
 }

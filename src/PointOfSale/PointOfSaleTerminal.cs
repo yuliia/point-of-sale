@@ -90,26 +90,87 @@ namespace PointOfSale
             return total;
         }
 
+        public decimal GetTotal1()
+        {
+            return GetTotal();
+        }
+
         private decimal CalculatePriceWithPromotions(int quantity, IReadOnlyList<PriceInfo> priceInfos)
         {
             var sum = 0m;
             var quantityLeft = quantity;
 
-            foreach (var promotion in priceInfos.OrderByDescending(x => x.Quantity))
+            foreach (var priceInfo in priceInfos.OrderByDescending(x => x.Quantity))
             {
-                if (promotion.Quantity > quantity)
+                if (priceInfo.Quantity > quantity)
                 {
                     continue;
                 }
                 
-                var volumesCount = (int)Math.Floor(quantityLeft / (decimal)promotion.Quantity);
+                var volumesCount = (int)Math.Floor(quantityLeft / (decimal)priceInfo.Quantity);
 
-                sum += volumesCount * promotion.Price;
+                sum += volumesCount * priceInfo.Price;
 
-                quantityLeft -= volumesCount * promotion.Quantity;
+                quantityLeft -= volumesCount * priceInfo.Quantity;
             }
 
             return sum;
+        }
+    }
+
+    public class CheckItem
+    {
+        public string Code { get; set; }
+
+        public int Quantity { get; set; }
+
+        public decimal CurrentPrice { get; set; }
+        public PriceInfo[] PricesToApply { get; set; }
+        public PriceInfo[] PricesApplied { get; set; }
+    }
+    
+    public interface IPricingStrategy
+    {
+        PriceType PriceType { get; }
+        decimal CalculatePrice(PriceInfo info, CheckItem[] items);
+    }
+
+    public class DefaultPriceStrategy : IPricingStrategy
+    {
+        public PriceType PriceType { get; } = PriceType.Price;
+        public decimal CalculatePrice(PriceInfo info, CheckItem[] items)
+        {
+            //todo null checks
+            //todo check for price info type
+            foreach (var item in items)
+            {
+                if (item.Code != info.Code) continue;
+                item.PricesApplied = new[] {info};
+                item.CurrentPrice = info.Price * item.Quantity;
+            }
+        }
+    }
+
+    public class VolumePriceStrategy : IPricingStrategy
+    {
+        public PriceType PriceType { get; } = PriceType.VolumeDiscount;
+        public decimal CalculatePrice(PriceInfo info, CheckItem[] items)
+        {
+            //todo null checks
+            //todo check for price info type
+            throw new NotImplementedException();
+            //will split items by quantity
+        }
+    }
+    
+    public class CumulativeDiscountStrategy : IPricingStrategy
+    {
+        public PriceType PriceType { get; }
+        public decimal CalculatePrice(PriceInfo info, CheckItem[] items)
+        {
+            //todo null checks
+            //todo check for price info type
+            throw new NotImplementedException();
         }
     }
 }
