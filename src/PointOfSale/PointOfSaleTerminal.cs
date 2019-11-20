@@ -52,8 +52,13 @@ namespace PointOfSale
                 }
 
                 _pricesCache[code] = prices;
+                
+                if (prices.First().Type == PriceType.CumulativeDiscount)
+                {
+                    return;
+                }
             }
-            
+
             if (_check.ContainsKey(code))
             {
                 _check[code] += quantity;

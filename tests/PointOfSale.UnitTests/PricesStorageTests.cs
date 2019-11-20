@@ -8,28 +8,33 @@ namespace PointOfSale.UnitTests
 {
     public class PricesStorageTests
     {
-        private readonly (string code, int quantity, decimal price)[] _originalPrices = 
+        private readonly (string code, int quantity, decimal price, PriceType type)[] _originalPrices = 
         {
-            ("A", 1, 1.25m),
-            ("A", 3, 3m),
-            ("B", 1, 4.25m),
-            ("C", 1, 1m),
-            ("C", 6, 5m),
-            ("D", 1, 0.75m)
+            ("A", 1, 1.25m, PriceType.DefaultPrice),
+            ("A", 3, 3m, PriceType.VolumeDiscount),
+            ("B", 1, 4.25m, PriceType.DefaultPrice),
+            ("C", 1, 1m, PriceType.DefaultPrice),
+            ("C", 6, 5m, PriceType.VolumeDiscount),
+            ("D", 1, 0.75m, PriceType.DefaultPrice),
+            ("Discount", 1, 0.01m, PriceType.CumulativeDiscount)
         };
 
         public static List<object[]> PricesData => new List<object[]>
         {
-            new object[] {"A", new[] {new PriceInfo("A", 1, 1.25m), new PriceInfo("A", 3, 3m)}},
-            new object[] {"B", new[] {new PriceInfo("B", 1, 4.25m)}},
-            new object[] {"C", new[] {new PriceInfo("C", 1, 1m), new PriceInfo("C", 6, 5m)}},
-            new object[] {"D", new[] {new PriceInfo("D", 1, 0.75m)}},
+            new object[] {"A", new[] {new PriceInfo("A", 1, 1.25m, PriceType.DefaultPrice), 
+                new PriceInfo("A", 3, 3m, PriceType.VolumeDiscount)}},
+            new object[] {"B", new[] {new PriceInfo("B", 1, 4.25m, PriceType.DefaultPrice)}},
+            new object[] {"C", new[] {new PriceInfo("C", 1, 1m, PriceType.DefaultPrice), 
+                new PriceInfo("C", 6, 5m, PriceType.VolumeDiscount)}},
+            new object[] {"D", new[] {new PriceInfo("D", 1, 0.75m, PriceType.DefaultPrice)}},
         };
 
         public static List<object[]> UpdatePricesData => new List<object[]>
         {
-            new object[] {"A", (3, 2.5m), new[] {new PriceInfo("A", 1, 1.25m), new PriceInfo("A", 3, 2.5m)}},
-            new object[] {"B", (2, 6m), new[] {new PriceInfo("B", 1, 4.25m), new PriceInfo("B", 2, 6m)}}
+            new object[] {"A", (3, 2.5m, PriceType.VolumeDiscount), new[] {new PriceInfo("A", 1, 1.25m, PriceType.DefaultPrice), 
+                new PriceInfo("A", 3, 2.5m, PriceType.VolumeDiscount)}},
+            new object[] {"B", (2, 6m, PriceType.VolumeDiscount), new[] {new PriceInfo("B", 1, 4.25m, PriceType.DefaultPrice), 
+                new PriceInfo("B", 2, 6m, PriceType.VolumeDiscount)}}
         };
 
 
@@ -40,7 +45,7 @@ namespace PointOfSale.UnitTests
             var pricesStorage = new PricesStorage();
             foreach (var price in _originalPrices)
             {
-                pricesStorage.SetPrice(price.code, price.quantity, price.price);
+                pricesStorage.SetPrice(price.code, price.quantity, price.price, price.type);
             }
 
             var prices = pricesStorage.GetPrices(code);
@@ -50,15 +55,15 @@ namespace PointOfSale.UnitTests
         
         [Theory]
         [MemberData(nameof(UpdatePricesData), MemberType = typeof(PricesStorageTests))]
-        public void Can_Update_Prices(string code, (int quantity, decimal price) update, PriceInfo[] expetedPrices)
+        public void Can_Update_Prices(string code, (int quantity, decimal price, PriceType type) update, PriceInfo[] expetedPrices)
         {
             var pricesStorage = new PricesStorage();
             foreach (var price in _originalPrices)
             {
-                pricesStorage.SetPrice(price.code, price.quantity, price.price);
+                pricesStorage.SetPrice(price.code, price.quantity, price.price, price.type);
             }
 
-            pricesStorage.SetPrice(code, update.quantity, update.price);
+            pricesStorage.SetPrice(code, update.quantity, update.price, update.type);
             var prices = pricesStorage.GetPrices(code);
             
             CollectionAssert.AreEquivalent(expetedPrices, prices.ToArray());

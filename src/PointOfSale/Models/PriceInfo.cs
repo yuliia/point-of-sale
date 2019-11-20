@@ -4,7 +4,7 @@ namespace PointOfSale.Models
 {
     public class PriceInfo
     {
-        public PriceInfo(string code, int quantity, decimal price, PriceType type = PriceType.DefaultPrice, PriceUnit unit = PriceUnit.Money)
+        public PriceInfo(string code, int quantity, decimal price, PriceType type)
         {
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -16,7 +16,7 @@ namespace PointOfSale.Models
                 throw new ArgumentException($"{nameof(quantity)} should be positive number.");
             }
             
-            if (price <= 0)
+            if (price <= 0 && type != PriceType.CumulativeDiscount)
             {
                 throw new ArgumentException($"{nameof(price)} should be positive number.");
             }
@@ -24,6 +24,7 @@ namespace PointOfSale.Models
             Code = code;
             Quantity = quantity;
             Price = price;
+            Type = type;
         }
         
         public string Code { get; }
@@ -32,9 +33,7 @@ namespace PointOfSale.Models
         
         public decimal Price { get; }
 
-        public PriceType Type { get; set; }
-
-        public PriceUnit PriceUnit { get; set; }
+        public PriceType Type { get; }
         
         protected bool Equals(PriceInfo other)
         {
@@ -59,25 +58,5 @@ namespace PointOfSale.Models
                 return hashCode;
             }
         }
-    }
-
-    public enum PriceUnit
-    {
-        Money = 0,
-        Percents
-    }
-
-    public enum PriceType
-    {
-        DefaultPrice = 0,
-        VolumeDiscount = 1,
-        CumulativeDiscount = 2
-    }
-
-    public class CumulativeDiscount
-    {
-        public string Code { get; set; }
-
-        public decimal AmountAccumulated { get; set; }
     }
 }

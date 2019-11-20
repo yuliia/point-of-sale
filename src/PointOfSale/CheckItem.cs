@@ -5,12 +5,21 @@ using PointOfSale.Models;
 namespace PointOfSale
 {
     public class CheckItem
-    {
-        public string Code { get; set; }
+    {        public CheckItem(string code, int quantity)
+        {
+            Code = code;
+            Quantity = quantity;
+            SubItems = new List<CheckSubItem>();
+            SubItems.Add(new CheckSubItem
+            {
+                Quantity = quantity
+            });
+        }
+        public string Code { get; }
 
-        public int Quantity { get; set; }
+        public int Quantity { get; }
         
-        public List<CheckSubItem> SubItems { get; set; } = new List<CheckSubItem>();
+        public List<CheckSubItem> SubItems { get; }
 
         public PriceInfo DefaultPrice { get; set; }
     }
