@@ -22,13 +22,13 @@ namespace PointOfSale.PricingStrategies
         {
             foreach (var item in items)
             {
-                foreach (var sub in item.SubItems.Where(x => x.PriceApplied.Type == PriceType.DefaultPrice))
+                foreach (var sub in item.SubItems.Where(x => x.PriceApplied?.Type == PriceType.DefaultPrice))
                 {
                     sub.PriceApplied = info;
                 }
             }
 
-            var defaultPrice = items.Sum(x => x.Quantity * x.DefaultPrice.Price);
+            var defaultPrice = items.Sum(x => x.Quantity * (x.DefaultPrice?.Price ?? 0));
             
             //todo move it to close check method?
             _storage.UpdateAccumulatedAmount(info.Code, defaultPrice);

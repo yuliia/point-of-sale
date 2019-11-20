@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using PointOfSale.Exceptions;
-using PointOfSale.Models;
 using Xunit;
+using Xunit.Sdk;
 
 namespace PointOfSale.IntegrationTests
 {
@@ -146,6 +146,42 @@ namespace PointOfSale.IntegrationTests
             Assert.Equal(newPrice, total);
         }
 
+        [Fact]
+        public void Can_Accumulate_Discount()
+        {
+            var pos = GetSetUpInstance();
+            pos.AddDiscount("Discount");
+            
+            pos.Scan("C");
+            pos.Scan("Discount");
+            var total = pos.GetTotal();
+            Assert.Equal(1m, total);
+            pos.CloseCheck();
+            
+            pos.Scan("C", 1000);
+            pos.Scan("Discount");
+            total = pos.GetTotal();              // accumulated 1001 for next time, but not applied this time
+            Assert.Equal(834m, total);
+            pos.CloseCheck();
+            
+            pos.Scan("C", 1000);   // accumulated 2001, current discount is 0.01
+            pos.Scan("Discount");
+            total = pos.GetTotal();
+            Assert.Equal(833.96m, total);
+            pos.CloseCheck();
+            
+            pos.Scan("C", 3000);    // accumulated 5001, current discount is 0.03
+            pos.Scan("Discount");
+            total = pos.GetTotal();
+            Assert.Equal(2500m, total);
+            pos.CloseCheck();
+
+            pos.Scan("C", 5);    // current discount is 0.05
+            pos.Scan("Discount");
+            total = pos.GetTotal();
+            Assert.Equal(4.75m, total);
+        }
+        
         private PointOfSaleTerminal GetSetUpInstance()
         {
             var pos = new PointOfSaleTerminal();

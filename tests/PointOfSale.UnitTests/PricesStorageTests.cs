@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PointOfSale.Models;
 using Xunit;
+using Assert = Xunit.Assert;
 
 namespace PointOfSale.UnitTests
 {
@@ -67,6 +68,31 @@ namespace PointOfSale.UnitTests
             var prices = pricesStorage.GetPrices(code);
             
             CollectionAssert.AreEquivalent(expetedPrices, prices.ToArray());
+        }
+
+        [Theory]
+        [InlineData(5, 0)]
+        [InlineData(999, 0)]
+        [InlineData(999.99999, 0)]
+        [InlineData(1000, 0.01)]
+        [InlineData(1989, 0.01)]
+        [InlineData(1999.9999, 0.01)]
+        [InlineData(2000, 0.03)]
+        [InlineData(2999.9999, 0.03)]
+        [InlineData(4999.9999, 0.03)]
+        [InlineData(5000, 0.05)]
+        [InlineData(9999.9999, 0.05)]
+        [InlineData(10000, 0.07)]
+        public void Can_Update_Discount(decimal accumulated, decimal expectedDiscount)
+        {
+            var code = "discount";
+            var storage = new PricesStorage();
+            storage.SetPrice(code, 1, 0, PriceType.CumulativeDiscount);
+            
+            storage.UpdateAccumulatedAmount(code, accumulated);
+            var discount = storage.GetPrices(code).Single();
+            
+            Assert.Equal(expectedDiscount, discount.Price);
         }
     }
 }

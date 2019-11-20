@@ -12,13 +12,12 @@ namespace PointOfSale
         private readonly Dictionary<string, CumulativeDiscount> _cumulativeDiscounts = new Dictionary<string, CumulativeDiscount>();
         
         // todo separate model for rules, separate method/class to get them
-        private readonly (decimal lowerLimit, decimal? upperLimit, int percents)[] _cumulativeRules = new[]
+        private readonly (decimal lowerLimit, decimal? upperLimit, decimal percents)[] _cumulativeRules = new[]
         {
-            (1000m, (decimal?)1999, 1),
-            (2000m, (decimal?)4999m, 3),
-            (5000m, (decimal?)9999m, 5),
-            (9999m, (decimal?)null, 7)
-            // todo: edge cases
+            (1000m, (decimal?)2000, 0.01m),
+            (2000m, (decimal?)5000m, 0.03m),
+            (5000m, (decimal?)10000m, 0.05m),
+            (10000, (decimal?)null, 0.07m)
         };
         public IReadOnlyList<PriceInfo> GetPrices(string code)
         {
@@ -67,18 +66,18 @@ namespace PointOfSale
 
             var ruleApplied =
                 _cumulativeRules.FirstOrDefault(x =>
-                    discount.AmountAccumulated > x.lowerLimit
+                    discount.AmountAccumulated >= x.lowerLimit
                     && (!x.upperLimit.HasValue || discount.AmountAccumulated < x.upperLimit));
             
             discount.AmountAccumulated += amount;
 
-            if (!ruleApplied.upperLimit.HasValue || discount.AmountAccumulated <= ruleApplied.upperLimit)
+            if (discount.AmountAccumulated < ruleApplied.upperLimit)
             {
                 return;
             }
             
-            var ruleToApply = _cumulativeRules.First(x =>
-                discount.AmountAccumulated > x.lowerLimit
+            var ruleToApply = _cumulativeRules.FirstOrDefault(x =>
+                discount.AmountAccumulated >= x.lowerLimit
                 && (!x.upperLimit.HasValue || discount.AmountAccumulated < x.upperLimit));
             
             SetPrice(code, 1, ruleToApply.percents, PriceType.CumulativeDiscount);
