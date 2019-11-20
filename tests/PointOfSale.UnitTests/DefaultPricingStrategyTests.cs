@@ -1,5 +1,6 @@
 using System.Linq;
 using PointOfSale.Models;
+using PointOfSale.PricingStrategies;
 using Xunit;
 
 namespace PointOfSale.UnitTests

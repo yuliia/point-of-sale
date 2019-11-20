@@ -1,20 +1,21 @@
 using PointOfSale.Models;
 
-namespace PointOfSale
+namespace PointOfSale.PricingStrategies
 {
-    public class DefaultPricingStrategy : IPricingStrategy
+    public class DefaultPricingStrategy : PricingStrategyBase
     {
-        public PriceType PriceType { get; } = PriceType.DefaultPrice;
+        public DefaultPricingStrategy() : base(PriceType.DefaultPrice)
+        {
+            
+        }
 
-        public decimal CalculatePrice(CheckSubItem item, PriceInfo defaultPrice)
+        protected override decimal CalculatePriceImpl(CheckSubItem item, PriceInfo defaultPrice)
         {
             return defaultPrice.Price * item.Quantity;
         }
 
-        public CheckItem[] ApplyPrice(PriceInfo info, CheckItem[] items)
+        protected override CheckItem[] ApplyPriceImpl(PriceInfo info, CheckItem[] items)
         {
-            //todo null checks
-            //todo check for price info type
             foreach (var item in items)
             {
                 if (item.Code != info.Code) continue;

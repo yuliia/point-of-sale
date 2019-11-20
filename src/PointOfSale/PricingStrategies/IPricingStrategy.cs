@@ -1,6 +1,6 @@
 using PointOfSale.Models;
 
-namespace PointOfSale
+namespace PointOfSale.PricingStrategies
 {
     public interface IPricingStrategy
     {

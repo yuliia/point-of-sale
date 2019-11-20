@@ -1,24 +1,22 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using PointOfSale.Models;
 
-namespace PointOfSale
+namespace PointOfSale.PricingStrategies
 {
-    public class VolumePricingStrategy : IPricingStrategy
+    public class VolumePricingStrategy : PricingStrategyBase
     {
-        public PriceType PriceType { get; } = PriceType.VolumeDiscount;
+        public VolumePricingStrategy() : base(PriceType.VolumeDiscount)
+        {
+        }
 
-        public decimal CalculatePrice(CheckSubItem item, PriceInfo defaultPrice)
+        protected override decimal CalculatePriceImpl(CheckSubItem item, PriceInfo defaultPrice)
         {
             return (decimal)item.Quantity / item.PriceApplied.Quantity * item.PriceApplied.Price;
         }
 
-        public CheckItem[] ApplyPrice(PriceInfo info, CheckItem[] items)
+        protected override CheckItem[] ApplyPriceImpl(PriceInfo info, CheckItem[] items)
         {
-            //todo null checks
-            //todo check for price info type
-            
             foreach (var item in items)
             {
                 if (item.Code != info.Code || item.Quantity < info.Quantity)

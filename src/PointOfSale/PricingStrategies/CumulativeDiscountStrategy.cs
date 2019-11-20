@@ -1,31 +1,25 @@
-using System;
 using System.Linq;
 using PointOfSale.Interfaces;
 using PointOfSale.Models;
 
-namespace PointOfSale
+namespace PointOfSale.PricingStrategies
 {
-    public class CumulativeDiscountStrategy : IPricingStrategy
+    public class CumulativeDiscountStrategy : PricingStrategyBase
     {
         private readonly IPricesStorage _storage;
-        public PriceType PriceType { get; }
 
-        public CumulativeDiscountStrategy(IPricesStorage storage)
+        public CumulativeDiscountStrategy(IPricesStorage storage) : base(PriceType.CumulativeDiscount)
         {
             _storage = storage;
         } 
         
-        public decimal CalculatePrice(CheckSubItem item, PriceInfo defaultPrice)
+        protected override decimal CalculatePriceImpl(CheckSubItem item, PriceInfo defaultPrice)
         {
-            //todo null checks
-            //todo check for price info type
             return item.Quantity * defaultPrice.Price * (1 -item.PriceApplied.Price);
         }
 
-        public CheckItem[] ApplyPrice(PriceInfo info, CheckItem[] items)
+        protected override CheckItem[] ApplyPriceImpl(PriceInfo info, CheckItem[] items)
         {
-            //todo null checks
-            //todo check for price info type
             foreach (var item in items)
             {
                 foreach (var sub in item.SubItems.Where(x => x.PriceApplied.Type == PriceType.DefaultPrice))

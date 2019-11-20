@@ -4,6 +4,7 @@ using System.Linq;
 using PointOfSale.Exceptions;
 using PointOfSale.Interfaces;
 using PointOfSale.Models;
+using PointOfSale.PricingStrategies;
 
 namespace PointOfSale
 {
