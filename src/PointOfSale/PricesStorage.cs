@@ -35,11 +35,15 @@ namespace PointOfSale
                 {
                     throw new InvalidOperationException("Can't add volume price without price for single item.");
                 }
-            
+
+                var newPrice = new PriceInfo(code, quantity, price);
+                if (quantity > 1)
+                {
+                    newPrice.Type = PriceType.VolumeDiscount;
+                }
                 _prices[code] = new List<PriceInfo>
                 {
-                    new PriceInfo(code, quantity, price)
-                    // todo set price type
+                    newPrice
                 };
                 return;
             }
@@ -49,8 +53,13 @@ namespace PointOfSale
             {
                 prices.Remove(volumePrice);
             }
-            
-            prices.Add(new PriceInfo(code, quantity, price));
+            var priceInfo = new PriceInfo(code, quantity, price);
+            if (quantity > 1)
+            {
+                priceInfo.Type = PriceType.VolumeDiscount;
+            }
+
+            prices.Add(priceInfo);
         }
 
         public void UpdateAccumulatedAmount(string code, decimal amount)

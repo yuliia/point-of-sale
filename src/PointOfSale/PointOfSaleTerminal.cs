@@ -77,7 +77,7 @@ namespace PointOfSale
             _pricesCache.Clear();
         }
 
-        public decimal GetTotal()
+        public decimal GetTotalOld()
         {
             var total = 0m;
             
@@ -90,9 +90,54 @@ namespace PointOfSale
             return total;
         }
 
-        public decimal GetTotal1()
+        public decimal GetTotal()
         {
-            return GetTotal();
+            var check = _check.Select(x => new CheckItem
+            {
+                Code = x.Key,
+                Quantity = x.Value,
+                SubItems = new List<CheckSubItem>
+                {
+                    new CheckSubItem
+                    {
+                        Quantity = x.Value
+                    }
+                }
+            }).ToArray();
+
+            var pricesOrdered = _pricesCache.Values.SelectMany(x => x)
+                .OrderBy(x => x.Type)
+                .ThenByDescending(x => x.Quantity);
+
+            foreach (var price in pricesOrdered)
+            {
+                var strategy = GetStrategy(price.Type);
+                check = strategy.ApplyPrice(price, check);
+            }
+
+            return check.Sum(x => 
+                x.SubItems
+                    .Sum(si => 
+                        GetStrategy(si.PriceApplied.Type)
+                            .CalculatePrice(si, x.DefaultPrice)));
+        }
+
+        private IPricingStrategy GetStrategy(PriceType type)
+        {
+            //todo do not create new instances every time
+            switch (type)
+            {
+                case PriceType.DefaultPrice:
+                    return new DefaultPriceStrategy();
+                
+                case PriceType.VolumeDiscount:
+                    return new VolumePriceStrategy();
+                
+                case PriceType.CumulativeDiscount:
+                    return new CumulativeDiscountStrategy(_pricesStorage);
+                default:
+                    throw new NotSupportedException($"Unknown price type {type}");
+            }
         }
 
         private decimal CalculatePriceWithPromotions(int quantity, IReadOnlyList<PriceInfo> priceInfos)
@@ -115,62 +160,6 @@ namespace PointOfSale
             }
 
             return sum;
-        }
-    }
-
-    public class CheckItem
-    {
-        public string Code { get; set; }
-
-        public int Quantity { get; set; }
-
-        public decimal CurrentPrice { get; set; }
-        public PriceInfo[] PricesToApply { get; set; }
-        public PriceInfo[] PricesApplied { get; set; }
-    }
-    
-    public interface IPricingStrategy
-    {
-        PriceType PriceType { get; }
-        decimal CalculatePrice(PriceInfo info, CheckItem[] items);
-    }
-
-    public class DefaultPriceStrategy : IPricingStrategy
-    {
-        public PriceType PriceType { get; } = PriceType.Price;
-        public decimal CalculatePrice(PriceInfo info, CheckItem[] items)
-        {
-            //todo null checks
-            //todo check for price info type
-            foreach (var item in items)
-            {
-                if (item.Code != info.Code) continue;
-                item.PricesApplied = new[] {info};
-                item.CurrentPrice = info.Price * item.Quantity;
-            }
-        }
-    }
-
-    public class VolumePriceStrategy : IPricingStrategy
-    {
-        public PriceType PriceType { get; } = PriceType.VolumeDiscount;
-        public decimal CalculatePrice(PriceInfo info, CheckItem[] items)
-        {
-            //todo null checks
-            //todo check for price info type
-            throw new NotImplementedException();
-            //will split items by quantity
-        }
-    }
-    
-    public class CumulativeDiscountStrategy : IPricingStrategy
-    {
-        public PriceType PriceType { get; }
-        public decimal CalculatePrice(PriceInfo info, CheckItem[] items)
-        {
-            //todo null checks
-            //todo check for price info type
-            throw new NotImplementedException();
         }
     }
 }

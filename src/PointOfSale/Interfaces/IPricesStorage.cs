@@ -10,5 +10,6 @@ namespace PointOfSale.Interfaces
         IReadOnlyList<PriceInfo> GetPrices(string code);
         
         void SetPrice(string code, int quantity, decimal price);
+        void UpdateAccumulatedAmount(string code, decimal amount);
     }
 }
