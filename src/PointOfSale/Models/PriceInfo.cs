@@ -4,7 +4,7 @@ namespace PointOfSale.Models
 {
     public class PriceInfo
     {
-        public PriceInfo(string code, int quantity, decimal price, PriceType type = PriceType.Price, PriceUnit unit = PriceUnit.Money)
+        public PriceInfo(string code, int quantity, decimal price, PriceType type = PriceType.DefaultPrice, PriceUnit unit = PriceUnit.Money)
         {
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -69,9 +69,9 @@ namespace PointOfSale.Models
 
     public enum PriceType
     {
-        Price = 0,
+        DefaultPrice = 0,
         VolumeDiscount = 1,
-        CardDiscount = 2
+        CumulativeDiscount = 2
     }
 
     public class CumulativeDiscount
