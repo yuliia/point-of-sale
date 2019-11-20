@@ -13,6 +13,7 @@ namespace PointOfSale
         private readonly IPricesStorage _pricesStorage;
         private readonly Dictionary<string, IReadOnlyList<PriceInfo>> _pricesCache;
         private readonly Dictionary<string, int> _check;
+        private readonly Dictionary<PriceType, IPricingStrategy> _strategies = new Dictionary<PriceType, IPricingStrategy>();
             
         public PointOfSaleTerminal() : this(new PricesStorage())
         {
@@ -111,17 +112,25 @@ namespace PointOfSale
 
         private IPricingStrategy GetStrategy(PriceType type)
         {
-            //todo do not create new instances every time
+            if (_strategies.TryGetValue(type, out var strategy))
+            {
+                return strategy;
+            }
             switch (type)
             {
                 case PriceType.DefaultPrice:
-                    return new DefaultPricingStrategy();
+                {
+                    _strategies[type] = new DefaultPricingStrategy();
+                    return  _strategies[type];
+                }
                 
                 case PriceType.VolumeDiscount:
-                    return new VolumeDiscountStrategy();
+                    _strategies[type] = new VolumeDiscountStrategy();
+                    return _strategies[type];
                 
                 case PriceType.CumulativeDiscount:
-                    return new CumulativeDiscountStrategy(_pricesStorage);
+                    _strategies[type] = new CumulativeDiscountStrategy(_pricesStorage);
+                    return _strategies[type];
                 default:
                     throw new NotSupportedException($"Unknown price type {type}");
             }
