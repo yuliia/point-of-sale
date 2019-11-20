@@ -39,9 +39,15 @@ namespace PointOfSale
                     }
                     
                     var volumesCount = (int)Math.Floor(subItem.Quantity / (decimal)info.Quantity);
-
-                    var newSubItem = subItem.Fission(volumesCount * info.Quantity);
-                    newSubItem.PriceApplied = info;
+                    var quantity = volumesCount * info.Quantity;
+                    
+                    subItem.Quantity -= quantity;
+                    
+                    var newSubItem = new CheckSubItem
+                    {
+                        PriceApplied = info,
+                        Quantity = quantity
+                    };
                     
                     newSubItems.Add(newSubItem);
                 }

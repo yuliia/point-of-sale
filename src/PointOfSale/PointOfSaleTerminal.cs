@@ -128,10 +128,10 @@ namespace PointOfSale
             switch (type)
             {
                 case PriceType.DefaultPrice:
-                    return new DefaultPriceStrategy();
+                    return new DefaultPricingStrategy();
                 
                 case PriceType.VolumeDiscount:
-                    return new VolumePriceStrategy();
+                    return new VolumePricingStrategy();
                 
                 case PriceType.CumulativeDiscount:
                     return new CumulativeDiscountStrategy(_pricesStorage);

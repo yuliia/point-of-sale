@@ -2,7 +2,7 @@ using PointOfSale.Models;
 
 namespace PointOfSale
 {
-    public class DefaultPriceStrategy : IPricingStrategy
+    public class DefaultPricingStrategy : IPricingStrategy
     {
         public PriceType PriceType { get; } = PriceType.DefaultPrice;
 
