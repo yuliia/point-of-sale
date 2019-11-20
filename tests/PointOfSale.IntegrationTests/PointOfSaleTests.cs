@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using PointOfSale.Exceptions;
+using PointOfSale.Models;
 using Xunit;
 
 namespace PointOfSale.IntegrationTests
@@ -24,7 +25,15 @@ namespace PointOfSale.IntegrationTests
             new object[] { new [] {("A", 1),("C", 4),("A", 1),("C", 2)}, 7.5m},
             new object[] { new [] {("A", 3),("B", 1),("C", 2),("D", 1),("C", 1)}, 11m}
         };
-        
+
+        public static List<object[]> CheckWithDifferentQuantitiesDataWithDiscount => new List<object[]>
+        {
+            new object[] { new [] {("A", 7),("B", 1),("C", 2),("D", 4)}, 0.01, 16.395m},
+            new object[] { new [] {("A", 7),("B", 1),("C", 2),("D", 4)}, 0.03, 16.185m},
+            new object[] { new [] {("A", 7),("B", 1),("C", 2),("D", 4)}, 0.05, 15.975m},
+            new object[] { new [] {("A", 7),("B", 1),("C", 2),("D", 4)}, 0.07, 15.765m},
+        };
+
         [Theory]
         [InlineData("ABCDABA", 13.25)]
         [InlineData("CCCCCCC", 6)]
@@ -47,6 +56,25 @@ namespace PointOfSale.IntegrationTests
         {
             var pos = GetSetUpInstance();
 
+            foreach (var item in items)
+            {
+                pos.Scan(item.code, item.quantity);
+            }
+
+            var total = pos.GetTotal();
+            
+            Assert.Equal(expectedTotal, total);
+        }
+        
+        [Theory]
+        [MemberData(nameof(CheckWithDifferentQuantitiesDataWithDiscount), MemberType = typeof(PointOfSaleTests))]
+        public void Can_Calculate_With_Different_Quantities_And_Discount_Specified(
+            (string code, int quantity)[] items, decimal discount, decimal expectedTotal)
+        {
+            var pos = GetSetUpInstance();
+            pos.AddDiscount("Discount", discount);
+            
+            pos.Scan("Discount");
             foreach (var item in items)
             {
                 pos.Scan(item.code, item.quantity);

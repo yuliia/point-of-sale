@@ -5,7 +5,7 @@ using PointOfSale.Models;
 
 namespace PointOfSale
 {
-    public class VolumePriceStrategy : IPricingStrategy
+    public class VolumePricingStrategy : IPricingStrategy
     {
         public PriceType PriceType { get; } = PriceType.VolumeDiscount;
 

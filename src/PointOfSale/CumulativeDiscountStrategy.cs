@@ -19,7 +19,7 @@ namespace PointOfSale
         {
             //todo null checks
             //todo check for price info type
-            return item.Quantity * defaultPrice.Price * item.PriceApplied.Price;
+            return item.Quantity * defaultPrice.Price * (1 -item.PriceApplied.Price);
         }
 
         public CheckItem[] ApplyPrice(PriceInfo info, CheckItem[] items)

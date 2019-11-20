@@ -17,8 +17,8 @@ namespace PointOfSale
             (1000m, (decimal?)1999, 1),
             (2000m, (decimal?)4999m, 3),
             (5000m, (decimal?)9999m, 5),
-            (5000m, (decimal?)9999m, 5),
             (9999m, (decimal?)null, 7)
+            // todo: edge cases
         };
         public IReadOnlyList<PriceInfo> GetPrices(string code)
         {
@@ -27,7 +27,7 @@ namespace PointOfSale
                 : new PriceInfo[0];
         }
         
-        public void SetPrice(string code, int quantity, decimal price)
+        public void SetPrice(string code, int quantity, decimal price, PriceType type)
         {
             if (!_prices.TryGetValue(code, out var prices))
             {
@@ -36,11 +36,7 @@ namespace PointOfSale
                     throw new InvalidOperationException("Can't add volume price without price for single item.");
                 }
 
-                var newPrice = new PriceInfo(code, quantity, price);
-                if (quantity > 1)
-                {
-                    newPrice.Type = PriceType.VolumeDiscount;
-                }
+                var newPrice = new PriceInfo(code, quantity, price, type);
                 _prices[code] = new List<PriceInfo>
                 {
                     newPrice
@@ -53,11 +49,7 @@ namespace PointOfSale
             {
                 prices.Remove(volumePrice);
             }
-            var priceInfo = new PriceInfo(code, quantity, price);
-            if (quantity > 1)
-            {
-                priceInfo.Type = PriceType.VolumeDiscount;
-            }
+            var priceInfo = new PriceInfo(code, quantity, price, type);
 
             prices.Add(priceInfo);
         }
@@ -66,11 +58,15 @@ namespace PointOfSale
         {
             if (!_cumulativeDiscounts.TryGetValue(code, out var discount))
             {
-                throw new InvalidOperationException();//todo should be anouther exception
+                _cumulativeDiscounts[code] = new CumulativeDiscount
+                {
+                    Code = code
+                };
+                discount = _cumulativeDiscounts[code];
             }
 
             var ruleApplied =
-                _cumulativeRules.First(x =>
+                _cumulativeRules.FirstOrDefault(x =>
                     discount.AmountAccumulated > x.lowerLimit
                     && (!x.upperLimit.HasValue || discount.AmountAccumulated < x.upperLimit));
             
@@ -85,7 +81,7 @@ namespace PointOfSale
                 discount.AmountAccumulated > x.lowerLimit
                 && (!x.upperLimit.HasValue || discount.AmountAccumulated < x.upperLimit));
             
-            SetPrice(code, 1, ruleToApply.percents);
+            SetPrice(code, 1, ruleToApply.percents, PriceType.CumulativeDiscount);
         }
     }
 }

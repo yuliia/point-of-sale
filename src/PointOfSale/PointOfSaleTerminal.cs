@@ -70,7 +70,12 @@ namespace PointOfSale
         
         public void SetPrice(string code, int quantity, decimal price)
         {
-            _pricesStorage.SetPrice(code, quantity, price);
+            _pricesStorage.SetPrice(code, quantity, price, quantity == 1 ? PriceType.DefaultPrice : PriceType.VolumeDiscount);
+        }
+
+        public void AddDiscount(string code, decimal initialDiscount = 0m)
+        {
+            _pricesStorage.SetPrice(code, 1, initialDiscount, PriceType.CumulativeDiscount);
         }
 
         /// <summary>
@@ -82,33 +87,9 @@ namespace PointOfSale
             _pricesCache.Clear();
         }
 
-        public decimal GetTotalOld()
-        {
-            var total = 0m;
-            
-            foreach (var product in _check)
-            {
-                total += CalculatePriceWithPromotions(product.Value,
-                    _pricesCache[product.Key]);
-            }
-
-            return total;
-        }
-
         public decimal GetTotal()
         {
-            var check = _check.Select(x => new CheckItem
-            {
-                Code = x.Key,
-                Quantity = x.Value,
-                SubItems = new List<CheckSubItem>
-                {
-                    new CheckSubItem
-                    {
-                        Quantity = x.Value
-                    }
-                }
-            }).ToArray();
+            var check = _check.Select(x => new CheckItem(x.Key, x.Value)).ToArray();
 
             var pricesOrdered = _pricesCache.Values.SelectMany(x => x)
                 .OrderBy(x => x.Type)
@@ -143,28 +124,6 @@ namespace PointOfSale
                 default:
                     throw new NotSupportedException($"Unknown price type {type}");
             }
-        }
-
-        private decimal CalculatePriceWithPromotions(int quantity, IReadOnlyList<PriceInfo> priceInfos)
-        {
-            var sum = 0m;
-            var quantityLeft = quantity;
-
-            foreach (var priceInfo in priceInfos.OrderByDescending(x => x.Quantity))
-            {
-                if (priceInfo.Quantity > quantity)
-                {
-                    continue;
-                }
-                
-                var volumesCount = (int)Math.Floor(quantityLeft / (decimal)priceInfo.Quantity);
-
-                sum += volumesCount * priceInfo.Price;
-
-                quantityLeft -= volumesCount * priceInfo.Quantity;
-            }
-
-            return sum;
         }
     }
 }
