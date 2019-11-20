@@ -4,9 +4,9 @@ using PointOfSale.Models;
 
 namespace PointOfSale.PricingStrategies
 {
-    public class VolumePricingStrategy : PricingStrategyBase
+    public class VolumeDiscountStrategy : PricingStrategyBase
     {
-        public VolumePricingStrategy() : base(PriceType.VolumeDiscount)
+        public VolumeDiscountStrategy() : base(PriceType.VolumeDiscount)
         {
         }
 
@@ -25,7 +25,7 @@ namespace PointOfSale.PricingStrategies
                 var newSubItems = new List<CheckSubItem>();
                 foreach (var subItem in item.SubItems)
                 {
-                    if (subItem.PriceApplied?.Type != PriceType.DefaultPrice)
+                    if (subItem.PriceApplied != null && subItem.PriceApplied?.Type != PriceType.DefaultPrice)
                     {
                         continue;
                     }

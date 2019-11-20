@@ -118,7 +118,7 @@ namespace PointOfSale
                     return new DefaultPricingStrategy();
                 
                 case PriceType.VolumeDiscount:
-                    return new VolumePricingStrategy();
+                    return new VolumeDiscountStrategy();
                 
                 case PriceType.CumulativeDiscount:
                     return new CumulativeDiscountStrategy(_pricesStorage);
