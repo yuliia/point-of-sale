@@ -12,7 +12,6 @@ terminal.SetPrice("C", 1, 1m);
 terminal.Scan("A");
 terminal.Scan("C", 2);
 decimal result = terminal.GetTotal(); // result will be 3.25
-terminal.CloseCheck();
 ```
 
 PointOfSaleTerminal allows to change price of an item without affecting check that are currently being scanned:

@@ -1,27 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using PointOfSale.Exceptions;
+using PointOfSale.DAL;
 using PointOfSale.Interfaces;
 using PointOfSale.Models;
+using PointOfSale.Notifications;
+using PointOfSale.Services;
 
 namespace PointOfSale
 {
-    public class PointOfSaleTerminal : IPointOfSaleTerminal
+    public class PointOfSaleTerminal : IDisposable
     {
-        private readonly IPricesStorage _pricesStorage;
-        private readonly Dictionary<string, IReadOnlyList<PriceInfo>> _pricesCache;
-        private readonly Dictionary<string, int> _check;
-            
-        public PointOfSaleTerminal() : this(new PricesStorage())
+        private readonly IProductRepository _productRepository;
+        private readonly IDiscountRepository _discountRepository;
+        private readonly IPointOfSellNotificator _notificator;
+
+        private readonly Dictionary<string, CheckItem> _scannedProducts = new Dictionary<string, CheckItem>();
+        private readonly List<Discount> _discounts = new List<Discount>();
+        private readonly IDisposable _subscription;
+
+        public PointOfSaleTerminal() 
+            : this(new ProductRepository(), new DiscountRepository(), new PointOfSellNotificator(), new DiscountCardService(new DiscountRepository()))
         {
         }
         
-        public PointOfSaleTerminal(IPricesStorage pricesStorage)
+        public PointOfSaleTerminal(
+            IProductRepository productRepository, 
+            IDiscountRepository discountRepository, 
+            IPointOfSellNotificator notificator,
+            IDiscountCardService discountCardService)
         {
-            _pricesStorage = pricesStorage;
-            _pricesCache = new Dictionary<string, IReadOnlyList<PriceInfo>>();
-            _check = new Dictionary<string, int>();
+            _productRepository = productRepository;
+            _discountRepository = discountRepository;
+            _notificator = notificator;
+            _subscription = _notificator.SubscribeCheckClosed(discountCardService.HandleCheckClosed);
+        }
+        
+        public void SetPrice(string code, decimal price)
+        {
+            var product = new Product(code, price);
+            _productRepository.AddProduct(product);
+        }
+
+        public void AddDiscount(Discount discount)
+        {
+            _discountRepository.AddDiscount(discount); //add or update
         }
 
         /// <summary>
@@ -31,7 +54,7 @@ namespace PointOfSale
         /// <param name="quantity"></param>
         /// <exception cref="ArgumentNullException">When `code` is null or empty</exception>
         /// <exception cref="ArgumentException">When `quantity` is not positive number</exception>
-        public void Scan(string code, int quantity = 1)
+        public bool Scan(string code, int quantity = 1)
         {
             if (string.IsNullOrWhiteSpace(code))
             {
@@ -43,73 +66,68 @@ namespace PointOfSale
                 throw new ArgumentException($"{nameof(quantity)} should be positive number.");
             }
 
-            if (!_pricesCache.ContainsKey(code))
+            if (_scannedProducts.TryGetValue(code, out var item))
             {
-                var prices = _pricesStorage.GetPrices(code);
-                if (!prices.Any())
-                {
-                    throw new PriceNotFoundException(code);
-                }
-
-                _pricesCache[code] = prices;
-            }
-            
-            if (_check.ContainsKey(code))
-            {
-                _check[code] += quantity;
-                return;
+                item.AddItems(quantity);
+                return true;
             }
 
-            _check[code] = quantity;
-        }
-        
-        public void SetPrice(string code, int quantity, decimal price)
-        {
-            _pricesStorage.SetPrice(code, quantity, price);
-        }
-
-        /// <summary>
-        /// Resets state to default
-        /// </summary>
-        public void CloseCheck()
-        {
-            _check.Clear();
-            _pricesCache.Clear();
+            var product = _productRepository.GetProduct(code);
+            if (product != null)
+            {
+                _scannedProducts[code] = new CheckItem(product, quantity);
+                return true;
+            }
+            var discount = _discountRepository.GetDiscount(code);
+            if (discount != null)
+            {
+                _discounts.Add(discount);
+                return true;
+            }
+            return false;
         }
 
         public decimal GetTotal()
         {
             var total = 0m;
-            
-            foreach (var product in _check)
+            var totalWithoutDiscount = 0m;
+            var cumulativeDiscount = _discounts.OfType<CumulativeDiscount>().FirstOrDefault();
+
+            foreach (var item in _scannedProducts.Values)
             {
-                total += CalculatePriceWithPromotions(product.Value,
-                    _pricesCache[product.Key]);
+                var volumeDiscount = GetDiscount<VolumeDiscount>(item.Code);
+                if (volumeDiscount != null)
+                {
+                    item.TryApplyDiscount(volumeDiscount);
+                }
+
+                if (cumulativeDiscount != null)
+                {
+                    item.TryApplyDiscount(cumulativeDiscount);
+                }
+
+                total += item.TotalPrice;
+                totalWithoutDiscount += item.TotalPriceWithoutDiscount;
             }
 
+            if (cumulativeDiscount != null)
+            {
+                _notificator.NotifyCheckClosed(cumulativeDiscount.Code, totalWithoutDiscount);
+            }
+            
+            _scannedProducts.Clear();
+            _discounts.Clear();
             return total;
         }
 
-        private decimal CalculatePriceWithPromotions(int quantity, IReadOnlyList<PriceInfo> priceInfos)
+        private T GetDiscount<T>(string code) where T : Discount
         {
-            var sum = 0m;
-            var quantityLeft = quantity;
+            return _discountRepository.GetDiscount(code) as T;
+        }
 
-            foreach (var promotion in priceInfos.OrderByDescending(x => x.Quantity))
-            {
-                if (promotion.Quantity > quantity)
-                {
-                    continue;
-                }
-                
-                var volumesCount = (int)Math.Floor(quantityLeft / (decimal)promotion.Quantity);
-
-                sum += volumesCount * promotion.Price;
-
-                quantityLeft -= volumesCount * promotion.Quantity;
-            }
-
-            return sum;
+        public void Dispose()
+        {
+            _subscription?.Dispose();
         }
     }
 }
